@@ -193,12 +193,12 @@
 
   /* Card animation directions */
   @keyframes cardUp {
-    from { opacity: 0; transform: translateY(40px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
   }
   @keyframes cardDown {
-    from { opacity: 0; transform: translateY(-40px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateX(-40px); }
+    to { opacity: 1; transform: translateX(0); }
   }
   .word-card.from-below { animation: cardUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
   .word-card.from-above { animation: cardDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -460,31 +460,31 @@ function renderCard(direction = 'from-below') {
       <div class="word-example">${word.example}</div>
     </div>
     <div class="counter">${orderPos + 1} of ${WORDS.length} words</div>
-    <div class="swipe-hint"><span>↕</span>Swipe to navigate</div>
+    <div class="swipe-hint"><span>←  →</span>Swipe to navigate</div>
   `;
 }
 
 // Swipe / scroll gesture handling
-let touchStartY = 0;
-let touchEndY = 0;
+let touchStartX = 0;
+let touchEndX = 0;
 let isSwiping = false;
 
 document.addEventListener('touchstart', function(e) {
   if (currentView !== 'words') return;
-  touchStartY = e.changedTouches[0].screenY;
+  touchStartX = e.changedTouches[0].screenX;
   isSwiping = true;
 }, { passive: true });
 
 document.addEventListener('touchend', function(e) {
   if (currentView !== 'words' || !isSwiping) return;
   isSwiping = false;
-  touchEndY = e.changedTouches[0].screenY;
-  const diff = touchStartY - touchEndY;
+  touchEndX = e.changedTouches[0].screenX;
+  const diff = touchStartX - touchEndX;
   const threshold = 50;
   if (diff > threshold) {
-    nextWord(); // swipe up = next
+    nextWord(); // swipe left = next
   } else if (diff < -threshold) {
-    prevWord(); // swipe down = previous
+    prevWord(); // swipe right = previous
   }
 }, { passive: true });
 
