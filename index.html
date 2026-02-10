@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lexicon">
+<link rel="manifest" href="manifest.json">
+<title>Lexicon</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F6F3EE;
+    --card: #FFFFFF;
+    --ink: #1A1A1A;
+    --muted: #6B6560;
+    --accent: #C45D3E;
+    --accent-soft: #F2E6E0;
+    --border: #E5E0DA;
+    --fav-gold: #D4A94B;
+    --fav-gold-soft: #FBF5E8;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+    --radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  header {
+    padding: 56px 24px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .logo span { color: var(--accent); }
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    background: var(--card);
+    border-radius: 10px;
+    padding: 3px;
+    border: 1px solid var(--border);
+  }
+  .tab {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+    border: none;
+    background: none;
+  }
+  .tab.active {
+    background: var(--ink);
+    color: #fff;
+  }
+
+  /* Main content area */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  /* Card view */
+  #card-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .word-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: cardIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .word-domain {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    align-self: flex-start;
+  }
+  .word-term {
+    font-family: 'Instrument Serif', serif;
+    font-size: 38px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .word-pronunciation {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  .word-definition {
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .word-example {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+    border-left: 2px solid var(--border);
+    padding-left: 16px;
+    margin-top: auto;
+  }
+  .word-example em { color: var(--ink); font-style: normal; font-weight: 500; }
+
+  /* Favorite button on card */
+  .fav-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .fav-btn:active { transform: scale(0.9); }
+  .fav-btn.saved {
+    background: var(--fav-gold-soft);
+    border-color: var(--fav-gold);
+  }
+  .fav-btn svg { width: 18px; height: 18px; transition: all 0.2s; }
+  .fav-btn .outline { color: var(--muted); }
+  .fav-btn .filled { color: var(--fav-gold); display: none; }
+  .fav-btn.saved .outline { display: none; }
+  .fav-btn.saved .filled { display: block; }
+
+  /* Next button */
+  .next-btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .next-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+  /* Counter */
+  .counter {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  /* Favorites view */
+  #fav-view { display: none; flex: 1; flex-direction: column; }
+  #fav-view.active { display: flex; }
+  #card-view.hidden { display: none; }
+
+  .fav-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    gap: 8px;
+  }
+  .fav-empty svg { width: 40px; height: 40px; opacity: 0.3; }
+  .fav-empty p { font-size: 14px; }
+
+  .fav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1;
+    padding-bottom: 20px;
+  }
+  .fav-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .fav-item-content { flex: 1; min-width: 0; }
+  .fav-item-term {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    margin-bottom: 2px;
+  }
+  .fav-item-domain {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+  .fav-item-def {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .fav-remove {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .fav-remove:active { background: #fee; border-color: #e88; color: #c44; }
+  .fav-remove svg { width: 14px; height: 14px; }
+
+  .fav-count {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Lexicon<span>.</span></div>
+  <div class="tab-bar">
+    <button class="tab active" id="tab-words" onclick="showView('words')">Words</button>
+    <button class="tab" id="tab-favs" onclick="showView('favs')">Saved</button>
+  </div>
+</header>
+
+<main>
+  <div id="card-view"></div>
+  <div id="fav-view"></div>
+</main>
+
+<script>
+const WORDS = [
+  { term: "Sensemaking", pronunciation: "/ˈsɛns.meɪ.kɪŋ/", domain: "Organizational Theory", definition: "The process by which individuals and groups interpret ambiguous or novel events to construct plausible meaning and determine a course of action.", example: "After the merger announcement, employees engaged in <em>sensemaking</em> to understand how the restructuring would affect their roles." },
+  { term: "Bounded Rationality", pronunciation: "/ˌbaʊn.dɪd ˌræʃ.əˈnæl.ɪ.ti/", domain: "Decision Theory", definition: "The concept that decision-makers operate within the limits of available information, cognitive capacity, and time, leading to satisficing rather than optimizing.", example: "Managers often demonstrate <em>bounded rationality</em> by choosing the first acceptable option rather than evaluating all possibilities." },
+  { term: "Isomorphism", pronunciation: "/ˌaɪ.soʊˈmɔːr.fɪ.zəm/", domain: "Institutional Theory", definition: "The tendency of organizations within a field to become structurally similar over time through coercive, mimetic, or normative pressures.", example: "The widespread adoption of diversity committees across universities is an example of <em>isomorphism</em> driven by normative expectations." },
+  { term: "Cognitive Dissonance", pronunciation: "/ˌkɒɡ.nɪ.tɪv ˈdɪs.ə.nəns/", domain: "Social Psychology", definition: "The psychological discomfort experienced when holding two or more contradictory beliefs, values, or attitudes simultaneously, motivating efforts to restore consistency.", example: "Employees who publicly endorsed the new policy while privately opposing it experienced significant <em>cognitive dissonance</em>." },
+  { term: "Loose Coupling", pronunciation: "/luːs ˈkʌp.lɪŋ/", domain: "Organizational Theory", definition: "A condition in which organizational elements are responsive to each other but retain their own identity and some degree of physical or logical separateness.", example: "Academic departments in universities often operate as <em>loosely coupled</em> systems, sharing resources but maintaining distinct cultures." },
+  { term: "Praxis", pronunciation: "/ˈpræk.sɪs/", domain: "Social Theory", definition: "The process by which theory, knowledge, or skill is enacted, embodied, or realized — the integration of reflection and action.", example: "Critical scholars argue that research should be oriented toward <em>praxis</em>, linking theoretical insight to meaningful social change." },
+  { term: "Reification", pronunciation: "/ˌreɪ.ɪ.fɪˈkeɪ.ʃən/", domain: "Philosophy / Social Theory", definition: "The treatment of an abstract concept as if it were a concrete, tangible thing, often obscuring the social processes that produced it.", example: "Treating 'organisational culture' as a fixed entity rather than an ongoing process is a form of <em>reification</em>." },
+  { term: "Satisficing", pronunciation: "/ˈsæt.ɪs.faɪ.sɪŋ/", domain: "Decision Theory", definition: "A decision-making strategy that aims for a satisfactory or adequate result rather than the optimal one, accepting the first option that meets a minimum threshold.", example: "Under time pressure, the hiring panel engaged in <em>satisficing</em>, selecting the first candidate who met all minimum criteria." },
+  { term: "Epistemic", pronunciation: "/ˌɛp.ɪˈstɛm.ɪk/", domain: "Epistemology", definition: "Relating to knowledge, its nature, scope, and the conditions under which beliefs can be justified or considered valid.", example: "The study raised <em>epistemic</em> questions about whether self-report surveys can capture tacit organizational knowledge." },
+  { term: "Ontological", pronunciation: "/ˌɒn.təˈlɒdʒ.ɪ.kəl/", domain: "Philosophy", definition: "Relating to the nature of being, existence, or reality — concerning what entities exist and how they can be categorised.", example: "The authors adopt an <em>ontological</em> position that organisations are socially constructed rather than objective structures." },
+  { term: "Decoupling", pronunciation: "/diːˈkʌp.lɪŋ/", domain: "Institutional Theory", definition: "The gap between an organization's formal policies or structures and its actual day-to-day practices, often adopted to gain legitimacy.", example: "The company adopted a sustainability policy for <em>decoupling</em> purposes — it looked good externally but had little effect on operations." },
+  { term: "Heuristic", pronunciation: "/hjʊˈrɪs.tɪk/", domain: "Cognitive Psychology", definition: "A mental shortcut or rule of thumb that simplifies decision-making, enabling quick judgments but sometimes at the cost of accuracy.", example: "The availability <em>heuristic</em> led managers to overestimate project risk based on a single recent failure." },
+  { term: "Legitimacy", pronunciation: "/lɪˈdʒɪt.ɪ.mə.si/", domain: "Institutional Theory", definition: "A generalised perception that an organization's actions are desirable, proper, or appropriate within a socially constructed system of norms and values.", example: "The startup sought <em>legitimacy</em> by partnering with established institutions and adopting recognizable governance structures." },
+  { term: "Dialectic", pronunciation: "/ˌdaɪ.əˈlɛk.tɪk/", domain: "Philosophy / Social Theory", definition: "A mode of reasoning or inquiry based on the tension between opposing ideas (thesis and antithesis), leading toward synthesis or deeper understanding.", example: "The paper frames organizational change as a <em>dialectic</em> between forces of stability and forces of transformation." },
+  { term: "Reflexivity", pronunciation: "/ˌriː.flɛkˈsɪv.ɪ.ti/", domain: "Research Methodology", definition: "The practice of critically examining one's own assumptions, biases, and influence on the research process and its outcomes.", example: "The researcher demonstrated <em>reflexivity</em> by acknowledging how her professional background shaped her interpretation of the data." },
+  { term: "Agency", pronunciation: "/ˈeɪ.dʒən.si/", domain: "Social Theory", definition: "The capacity of individuals to act independently, make free choices, and exert influence within or upon social structures.", example: "Structuration theory emphasises the interplay between <em>agency</em> and structure in shaping organisational outcomes." },
+  { term: "Affect", pronunciation: "/ˈæf.ɛkt/", domain: "Psychology", definition: "A broad term encompassing emotions, feelings, and moods that influence cognition and behaviour, often operating below conscious awareness.", example: "Positive <em>affect</em> in the workplace has been linked to greater creativity and prosocial behaviour among teams." },
+  { term: "Hegemony", pronunciation: "/hɪˈdʒɛm.ə.ni/", domain: "Critical Theory", definition: "The dominance of one group over others, maintained not solely through force but through cultural and ideological influence that shapes what is considered normal or natural.", example: "The paper critiques the <em>hegemony</em> of Western management models and their imposition on non-Western organisational contexts." },
+  { term: "Efficacy", pronunciation: "/ˈɛf.ɪ.kə.si/", domain: "Psychology", definition: "The belief in one's capability to execute behaviours necessary to produce specific outcomes — distinct from actual competence.", example: "Bandura's research shows that collective <em>efficacy</em> predicts team performance beyond the sum of individual abilities." },
+  { term: "Incommensurable", pronunciation: "/ˌɪn.kəˈmɛn.sjʊ.rə.bəl/", domain: "Philosophy of Science", definition: "Describing theories or paradigms that lack a common standard of comparison, making direct evaluation between them impossible.", example: "Kuhn argued that successive scientific paradigms are often <em>incommensurable</em>, complicating claims of linear progress." },
+  { term: "Salience", pronunciation: "/ˈseɪ.li.əns/", domain: "Social Psychology", definition: "The quality of being particularly noticeable, prominent, or relevant in a given context, influencing attention and judgment.", example: "Stakeholder <em>salience</em> increases when a group possesses power, legitimacy, and urgency simultaneously." },
+  { term: "Tacit Knowledge", pronunciation: "/ˈtæs.ɪt ˈnɒl.ɪdʒ/", domain: "Knowledge Management", definition: "Knowledge that is difficult to articulate, codify, or transfer through formal means — acquired through experience and embedded in practice.", example: "Much of a surgeon's expertise resides in <em>tacit knowledge</em> that cannot be learned from textbooks alone." },
+  { term: "Performativity", pronunciation: "/pəˌfɔːr.məˈtɪv.ɪ.ti/", domain: "Social Theory", definition: "The idea that language and theoretical frameworks do not merely describe reality but actively shape and constitute it through their use.", example: "Callon argues that economic theory exhibits <em>performativity</em> — markets behave according to models because actors use those models." },
+  { term: "Bricolage", pronunciation: "/ˌbrɪk.əˈlɑːʒ/", domain: "Organizational Theory", definition: "The construction of something from a diverse range of available resources and materials, implying creative improvisation rather than systematic design.", example: "The team used <em>bricolage</em> to assemble a working prototype from leftover components and open-source tools." },
+  { term: "Embeddedness", pronunciation: "/ɪmˈbɛd.ɪd.nəs/", domain: "Economic Sociology", definition: "The degree to which economic activity is constrained by, and shaped by, social relations, networks, and institutional context.", example: "Granovetter's concept of <em>embeddedness</em> challenges the notion that economic actors operate as isolated, rational agents." },
+  { term: "Liminality", pronunciation: "/lɪˈmɪn.əl.ɪ.ti/", domain: "Anthropology / Org Theory", definition: "A transitional state of being between two established phases — characterised by ambiguity, disorientation, and openness to change.", example: "New employees often experience <em>liminality</em> during onboarding, no longer outsiders but not yet fully integrated members." },
+  { term: "Hermeneutic", pronunciation: "/ˌhɜːr.mɪˈnjuː.tɪk/", domain: "Philosophy / Methodology", definition: "Relating to the theory and practice of interpretation, especially of texts, discourse, and social phenomena.", example: "The researchers adopted a <em>hermeneutic</em> approach, iterating between individual interview excerpts and the broader organisational narrative." },
+  { term: "Operationalize", pronunciation: "/ˌɒp.ə.reɪ.ʃən.əl.aɪz/", domain: "Research Methods", definition: "To define an abstract concept in measurable, observable terms so that it can be systematically studied or applied.", example: "The authors <em>operationalized</em> 'psychological safety' using a seven-item Likert scale adapted from Edmondson's original measure." },
+  { term: "Structuration", pronunciation: "/ˌstrʌk.tʃəˈreɪ.ʃən/", domain: "Social Theory", definition: "Giddens' theory that social structures are both the medium and the outcome of human action — people create structures that simultaneously constrain and enable them.", example: "<em>Structuration</em> theory helps explain how organizational routines are reproduced daily through the very actions they guide." },
+  { term: "Intersubjectivity", pronunciation: "/ˌɪn.tər.sʌb.dʒɛkˈtɪv.ɪ.ti/", domain: "Phenomenology", definition: "Shared understanding or meaning that arises between individuals through interaction, forming the basis of social reality and collective knowledge.", example: "Team cohesion depends on a degree of <em>intersubjectivity</em> — members must share enough common ground to coordinate effectively." },
+  { term: "Autopoiesis", pronunciation: "/ˌɔː.toʊ.pɔɪˈiː.sɪs/", domain: "Systems Theory", definition: "The capacity of a system to reproduce and maintain itself by continuously regenerating its own components from within.", example: "Luhmann applied the concept of <em>autopoiesis</em> to social systems, arguing that organisations sustain themselves through ongoing communication." },
+  { term: "Habitus", pronunciation: "/ˈhæb.ɪ.təs/", domain: "Sociology", definition: "The deeply ingrained dispositions, habits, and perceptions acquired through socialisation that shape how individuals perceive and respond to the social world.", example: "Bourdieu's concept of <em>habitus</em> explains why professionals from similar backgrounds often share unspoken assumptions about appropriate conduct." },
+  { term: "Ambidexterity", pronunciation: "/ˌæm.bɪ.dɛkˈstɛr.ɪ.ti/", domain: "Strategic Management", definition: "An organization's ability to simultaneously exploit existing competencies for efficiency and explore new opportunities for innovation.", example: "Achieving organisational <em>ambidexterity</em> requires structural separation or contextual switching between explorative and exploitative activities." },
+  { term: "Phenomenology", pronunciation: "/fɪˌnɒm.ɪˈnɒl.ə.dʒi/", domain: "Philosophy / Methodology", definition: "A philosophical approach and research tradition that focuses on the structure of lived experience and how phenomena appear to consciousness.", example: "The study used interpretive <em>phenomenology</em> to explore how mid-career professionals experience burnout in high-pressure environments." },
+  { term: "Priming", pronunciation: "/ˈpraɪ.mɪŋ/", domain: "Cognitive Psychology", definition: "The phenomenon in which exposure to a stimulus influences the response to a subsequent stimulus, often without conscious awareness.", example: "Participants who were <em>primed</em> with words related to achievement subsequently set more ambitious goals in the experimental task." },
+  { term: "Sedimentation", pronunciation: "/ˌsɛd.ɪ.mɛnˈteɪ.ʃən/", domain: "Institutional Theory", definition: "The process by which organizational practices become deeply embedded over time, layering upon one another and becoming taken for granted.", example: "Decades of <em>sedimentation</em> had made the approval process so entrenched that no one questioned its original purpose." },
+  { term: "Polysemy", pronunciation: "/pəˈlɪs.ɪ.mi/", domain: "Linguistics / Org Studies", definition: "The capacity of a word, phrase, or symbol to carry multiple meanings simultaneously, which can be strategically useful in organisational communication.", example: "The mission statement's <em>polysemy</em> allowed different departments to interpret it in ways that supported their own priorities." },
+  { term: "Abductive", pronunciation: "/æbˈdʌk.tɪv/", domain: "Research Methodology", definition: "A form of reasoning that begins with an observation and seeks the most likely explanation, moving iteratively between data and theory.", example: "The researchers employed <em>abductive</em> reasoning, moving back and forth between their field notes and existing theoretical frameworks." },
+  { term: "Positionality", pronunciation: "/pəˌzɪʃ.ənˈæl.ɪ.ti/", domain: "Research Methodology", definition: "The social, cultural, and political context that shapes a researcher's identity, perspective, and relationship to their subject of study.", example: "The author disclosed her <em>positionality</em> as a former employee of the organisation she was studying to ensure transparency." },
+  { term: "Enactment", pronunciation: "/ɪnˈækt.mənt/", domain: "Organizational Theory", definition: "The process by which individuals actively construct and bring into being the environments they then respond to, rather than passively perceiving an objective reality.", example: "Weick argues that managers do not simply react to environments — through <em>enactment</em>, they actively create the situations they face." },
+  { term: "Valence", pronunciation: "/ˈveɪ.ləns/", domain: "Motivation Theory", definition: "The subjective value or attractiveness an individual places on a particular outcome, central to expectancy theories of motivation.", example: "In Vroom's model, motivation depends on expectancy, instrumentality, and the <em>valence</em> of the anticipated reward." },
+  { term: "Paradigmatic", pronunciation: "/ˌpær.ə.dɪɡˈmæt.ɪk/", domain: "Philosophy of Science", definition: "Relating to or constituting a paradigm — a dominant framework of assumptions, methods, and standards within a discipline.", example: "The shift from positivist to interpretivist approaches marked a <em>paradigmatic</em> change in organisational research methodology." },
+  { term: "Conflation", pronunciation: "/kənˈfleɪ.ʃən/", domain: "Critical Realism", definition: "The problematic merging of distinct analytical levels or concepts, treating them as identical when they should be kept separate.", example: "Archer warns against the <em>conflation</em> of structure and agency, arguing that each must be analysed on its own terms." },
+  { term: "Morphogenesis", pronunciation: "/ˌmɔːr.foʊˈdʒɛn.ɪ.sɪs/", domain: "Critical Realism", definition: "The process by which a social system undergoes structural change and transformation, as opposed to morphostasis (structural reproduction).", example: "Archer's <em>morphogenetic</em> cycle distinguishes between conditions that reproduce existing structures and those that transform them." },
+  { term: "Axiological", pronunciation: "/ˌæk.si.əˈlɒdʒ.ɪ.kəl/", domain: "Philosophy / Research Methods", definition: "Relating to the study of values, particularly ethical and aesthetic values, and their role in shaping inquiry and judgment.", example: "An <em>axiological</em> commitment to social justice shaped the researchers' choice of participatory methods." },
+  { term: "Nomothetic", pronunciation: "/ˌnɒm.əˈθɛt.ɪk/", domain: "Research Methodology", definition: "An approach that seeks to establish general laws and universal principles, typically through large-scale, quantitative research.", example: "The <em>nomothetic</em> approach aimed to identify predictors of burnout that generalise across industries and cultures." },
+  { term: "Idiographic", pronunciation: "/ˌɪd.i.əˈɡræf.ɪk/", domain: "Research Methodology", definition: "An approach focused on understanding the unique, particular qualities of individual cases rather than deriving general laws.", example: "An <em>idiographic</em> analysis of the CEO's leadership style revealed context-specific strategies that defied standard typologies." },
+  { term: "Assemblage", pronunciation: "/əˈsɛm.blɪdʒ/", domain: "Social Theory", definition: "A collection of heterogeneous elements — human, material, discursive — that come together in contingent, dynamic arrangements to produce effects.", example: "The researchers analysed the innovation lab as an <em>assemblage</em> of technologies, people, funding structures, and institutional pressures." },
+  { term: "Commensuration", pronunciation: "/kəˌmɛn.sjʊˈreɪ.ʃən/", domain: "Sociology of Quantification", definition: "The transformation of qualitative differences into a common metric, enabling comparison but often erasing meaningful distinctions.", example: "University rankings rely on <em>commensuration</em>, reducing complex institutional differences to a single numerical score." },
+  { term: "Prosocial", pronunciation: "/proʊˈsoʊ.ʃəl/", domain: "Organizational Behaviour", definition: "Behaviour intended to benefit others or society as a whole, such as helping, sharing, cooperating, or volunteering.", example: "Leaders who model <em>prosocial</em> behaviour tend to cultivate stronger norms of cooperation within their teams." },
+  // Literary & General Writing Words
+  { term: "Equivocal", pronunciation: "/ɪˈkwɪv.ə.kəl/", domain: "General", definition: "Open to more than one interpretation; ambiguous or uncertain in meaning or intent.", example: "The findings were <em>equivocal</em> — neither clearly supporting nor refuting the original hypothesis." },
+  { term: "Palimpsest", pronunciation: "/ˈpæl.ɪmp.sɛst/", domain: "Literary", definition: "Something bearing visible traces of an earlier form beneath the surface — originally a manuscript page reused after earlier writing was scraped away.", example: "The neighbourhood is a <em>palimpsest</em> of successive immigrant communities, each leaving traces in the architecture and signage." },
+  { term: "Liminal", pronunciation: "/ˈlɪm.ɪ.nəl/", domain: "Literary / Anthropology", definition: "Occupying a position at or on both sides of a boundary or threshold — betwixt and between established categories.", example: "The essay explores the <em>liminal</em> space between waking and sleep where creative thought flourishes." },
+  { term: "Tractable", pronunciation: "/ˈtræk.tə.bəl/", domain: "General / Academic", definition: "Easy to deal with, manage, or control; of a problem, capable of being solved or addressed.", example: "What initially seemed an intractable dilemma became more <em>tractable</em> once the team reframed the constraints." },
+  { term: "Lacuna", pronunciation: "/ləˈkjuː.nə/", domain: "Literary / Academic", definition: "An unfilled space or gap — in a manuscript, argument, or body of knowledge.", example: "The authors identify a significant <em>lacuna</em> in the literature on informal leadership in flat organisations." },
+  { term: "Pellucid", pronunciation: "/pɛˈluː.sɪd/", domain: "Literary", definition: "Transparently clear in style, meaning, or appearance; easily understood.", example: "Despite the complexity of the subject, her prose remained <em>pellucid</em> throughout." },
+  { term: "Tendentious", pronunciation: "/tɛnˈdɛn.ʃəs/", domain: "Literary / Rhetoric", definition: "Expressing or promoting a particular cause or viewpoint, especially a controversial one, in a way that may be one-sided.", example: "Critics dismissed the report as <em>tendentious</em>, arguing it selectively cited evidence to support a predetermined conclusion." },
+  { term: "Quotidian", pronunciation: "/kwɒˈtɪd.i.ən/", domain: "Literary", definition: "Of or occurring every day; mundane and ordinary.", example: "The novel finds its power not in dramatic events but in the accumulation of <em>quotidian</em> detail." },
+  { term: "Propinquity", pronunciation: "/prəˈpɪŋ.kwɪ.ti/", domain: "Literary / Social Science", definition: "Physical or psychological nearness; the state of being close to someone or something.", example: "Workplace friendships often form through mere <em>propinquity</em> rather than shared interests." },
+  { term: "Verisimilitude", pronunciation: "/ˌvɛr.ɪ.sɪˈmɪl.ɪ.tjuːd/", domain: "Literary", definition: "The appearance of being true or real; the quality that makes a fictional narrative feel believable.", example: "The case study's power lies in its <em>verisimilitude</em> — readers recognise their own organisations in the description." },
+  { term: "Attenuate", pronunciation: "/əˈtɛn.ju.eɪt/", domain: "General / Academic", definition: "To reduce the force, effect, or value of something; to make thin or slender.", example: "The passage of time did little to <em>attenuate</em> the influence of the founder's original vision." },
+  { term: "Shibboleth", pronunciation: "/ˈʃɪb.ə.lɛθ/", domain: "Literary / Sociology", definition: "A belief, custom, or use of language that distinguishes one group from another, often used as a test of belonging.", example: "The use of certain acronyms had become a <em>shibboleth</em> — insiders used them fluently while newcomers stumbled." },
+  { term: "Inchoate", pronunciation: "/ɪnˈkoʊ.eɪt/", domain: "Literary / Legal", definition: "Just begun and not fully formed or developed; rudimentary and undeveloped.", example: "What started as an <em>inchoate</em> idea scribbled on a napkin eventually became the company's core strategy." },
+  { term: "Concatenation", pronunciation: "/kɒnˌkæt.ɪˈneɪ.ʃən/", domain: "General / Logic", definition: "A series of interconnected or interdependent things or events linked together in a chain.", example: "The crisis was not caused by a single failure but by a <em>concatenation</em> of small oversights that compounded over time." },
+  { term: "Palter", pronunciation: "/ˈpɔːl.tər/", domain: "Literary / Ethics", definition: "To act insincerely or misleadingly; to equivocate or deliberately create a false impression without outright lying.", example: "The executive did not lie outright but <em>paltered</em> by selectively presenting data that told only part of the story." },
+  { term: "Recondite", pronunciation: "/ˈrɛk.ən.daɪt/", domain: "Literary", definition: "Little known; abstruse and dealing with a subject that is obscure or difficult to understand.", example: "The paper's argument, while <em>recondite</em>, rewards careful reading with genuine insight into institutional decay." },
+  { term: "Anodyne", pronunciation: "/ˈæn.ə.daɪn/", domain: "General", definition: "Unlikely to cause offence or disagreement but correspondingly dull and uninspiring.", example: "The committee's report was so <em>anodyne</em> that it managed to say nothing while appearing to address everything." },
+  { term: "Capacious", pronunciation: "/kəˈpeɪ.ʃəs/", domain: "Literary", definition: "Having a great deal of space or scope; roomy and expansive, often used figuratively of ideas or frameworks.", example: "Her theory is <em>capacious</em> enough to accommodate both structural and interpretive approaches." },
+  { term: "Syncretic", pronunciation: "/sɪnˈkrɛt.ɪk/", domain: "General / Cultural Studies", definition: "Combining different beliefs, practices, or schools of thought into a unified whole.", example: "The framework is deliberately <em>syncretic</em>, drawing on both Eastern philosophy and Western systems theory." },
+  { term: "Penumbral", pronunciation: "/pɪˈnʌm.brəl/", domain: "Literary / Legal", definition: "Relating to a penumbra — the outer shadow; figuratively, an area of partial ambiguity or uncertainty.", example: "Many ethical questions in AI governance occupy a <em>penumbral</em> zone where existing regulations offer no clear guidance." },
+  { term: "Specious", pronunciation: "/ˈspiː.ʃəs/", domain: "General", definition: "Superficially plausible but actually wrong; misleading in appearance.", example: "The argument was <em>specious</em> — logically structured on the surface but built on a flawed premise." },
+  { term: "Obviate", pronunciation: "/ˈɒb.vi.eɪt/", domain: "General / Academic", definition: "To remove or prevent a difficulty or disadvantage; to make something unnecessary.", example: "A clear onboarding process would <em>obviate</em> the need for the informal workarounds that new hires currently rely on." },
+  { term: "Elide", pronunciation: "/ɪˈlaɪd/", domain: "General / Academic", definition: "To omit or suppress something, often blurring a distinction; originally, to omit a sound in speech.", example: "The report <em>elides</em> the distinction between correlation and causation, leading readers toward unwarranted conclusions." },
+  { term: "Salient", pronunciation: "/ˈseɪ.li.ənt/", domain: "General", definition: "Most noticeable or important; prominent and relevant.", example: "The most <em>salient</em> finding was that team size mattered far less than psychological safety." },
+  { term: "Predicate", pronunciation: "/ˈprɛd.ɪ.keɪt/", domain: "General / Academic", definition: "To found or base something on a particular condition, belief, or premise.", example: "The entire strategy is <em>predicated</em> on the assumption that consumer behaviour will remain stable." },
+  { term: "Gainsay", pronunciation: "/ˌɡeɪnˈseɪ/", domain: "Literary", definition: "To deny, contradict, or speak against.", example: "The evidence is so robust that even sceptics would find it difficult to <em>gainsay</em> the central conclusion." },
+  { term: "Vitiate", pronunciation: "/ˈvɪʃ.i.eɪt/", domain: "General / Legal", definition: "To spoil, impair, or make something ineffective; to destroy the legal validity of something.", example: "Selection bias <em>vitiates</em> the study's conclusions, making it impossible to generalise from the sample." },
+  { term: "Sui Generis", pronunciation: "/ˌsuː.i ˈdʒɛn.ər.ɪs/", domain: "General / Legal", definition: "Unique; in a class of its own; constituting a category alone.", example: "The organisation's hybrid governance model is <em>sui generis</em> — it defies classification within existing typologies." },
+  { term: "Occlude", pronunciation: "/əˈkluːd/", domain: "General / Academic", definition: "To stop, close up, or obstruct; to shut out or conceal from view.", example: "Focusing narrowly on financial metrics can <em>occlude</em> the social and environmental costs of a decision." },
+  { term: "Prolix", pronunciation: "/proʊˈlɪks/", domain: "Literary / Rhetoric", definition: "Using or containing too many words; tediously lengthy.", example: "The report would benefit from editing — several sections are unnecessarily <em>prolix</em>." },
+];
+
+let currentIndex = 0;
+let favorites = JSON.parse(localStorage.getItem('lexicon_favs') || '[]');
+let seenIndices = JSON.parse(localStorage.getItem('lexicon_seen') || '[]');
+let currentView = 'words';
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Build a shuffled order
+let order = JSON.parse(localStorage.getItem('lexicon_order') || 'null');
+if (!order || order.length !== WORDS.length) {
+  order = shuffle([...Array(WORDS.length).keys()]);
+  localStorage.setItem('lexicon_order', JSON.stringify(order));
+}
+let orderPos = parseInt(localStorage.getItem('lexicon_pos') || '0');
+
+function getCurrentWord() {
+  return WORDS[order[orderPos % WORDS.length]];
+}
+
+function isFavorited(term) {
+  return favorites.some(f => f.term === term);
+}
+
+function toggleFav() {
+  const word = getCurrentWord();
+  if (isFavorited(word.term)) {
+    favorites = favorites.filter(f => f.term !== word.term);
+  } else {
+    favorites.push({ term: word.term, domain: word.domain, definition: word.definition });
+  }
+  localStorage.setItem('lexicon_favs', JSON.stringify(favorites));
+  renderCard();
+  if (currentView === 'favs') renderFavs();
+}
+
+function nextWord() {
+  orderPos++;
+  if (orderPos >= WORDS.length) {
+    order = shuffle([...Array(WORDS.length).keys()]);
+    localStorage.setItem('lexicon_order', JSON.stringify(order));
+    orderPos = 0;
+  }
+  localStorage.setItem('lexicon_pos', orderPos.toString());
+  renderCard();
+}
+
+function renderCard() {
+  const word = getCurrentWord();
+  const saved = isFavorited(word.term);
+  document.getElementById('card-view').innerHTML = `
+    <div class="word-card">
+      <button class="fav-btn ${saved ? 'saved' : ''}" onclick="toggleFav()" aria-label="Save word">
+        <svg class="outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <svg class="filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <span class="word-domain">${word.domain}</span>
+      <div class="word-term">${word.term}</div>
+      <div class="word-pronunciation">${word.pronunciation}</div>
+      <div class="word-definition">${word.definition}</div>
+      <div class="word-example">${word.example}</div>
+    </div>
+    <button class="next-btn" onclick="nextWord()">Next Word →</button>
+    <div class="counter">${orderPos + 1} of ${WORDS.length} words</div>
+  `;
+}
+
+function renderFavs() {
+  const el = document.getElementById('fav-view');
+  if (favorites.length === 0) {
+    el.innerHTML = `
+      <div class="fav-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <p>No saved words yet</p>
+      </div>
+    `;
+    return;
+  }
+  el.innerHTML = `
+    <div class="fav-count">${favorites.length} saved word${favorites.length !== 1 ? 's' : ''}</div>
+    <div class="fav-list">
+      ${favorites.map((f, i) => `
+        <div class="fav-item">
+          <div class="fav-item-content">
+            <div class="fav-item-domain">${f.domain}</div>
+            <div class="fav-item-term">${f.term}</div>
+            <div class="fav-item-def">${f.definition}</div>
+          </div>
+          <button class="fav-remove" onclick="removeFav(${i})" aria-label="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function removeFav(index) {
+  favorites.splice(index, 1);
+  localStorage.setItem('lexicon_favs', JSON.stringify(favorites));
+  renderFavs();
+  renderCard();
+}
+
+function showView(view) {
+  currentView = view;
+  document.getElementById('tab-words').classList.toggle('active', view === 'words');
+  document.getElementById('tab-favs').classList.toggle('active', view === 'favs');
+  document.getElementById('card-view').classList.toggle('hidden', view === 'favs');
+  document.getElementById('fav-view').classList.toggle('active', view === 'favs');
+  if (view === 'favs') renderFavs();
+}
+
+renderCard();
+</script>
+</body>
+</html>
