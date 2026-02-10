@@ -192,16 +192,32 @@
   .swipe-hint span { font-size: 14px; display: block; margin-bottom: 2px; }
 
   /* Card animation directions */
-  @keyframes cardUp {
-    from { opacity: 0; transform: translateX(40px); }
+  @keyframes cardFromRight {
+    from { opacity: 0; transform: translateX(100%); }
     to { opacity: 1; transform: translateX(0); }
   }
-  @keyframes cardDown {
-    from { opacity: 0; transform: translateX(-40px); }
+  @keyframes cardFromLeft {
+    from { opacity: 0; transform: translateX(-100%); }
     to { opacity: 1; transform: translateX(0); }
   }
-  .word-card.from-below { animation: cardUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-  .word-card.from-above { animation: cardDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes cardExitLeft {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-100%); }
+  }
+  @keyframes cardExitRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100%); }
+  }
+  .word-card.enter-right { animation: cardFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+  .word-card.enter-left { animation: cardFromLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+  .word-card.dragging {
+    transition: none;
+    will-change: transform;
+  }
+  .word-card.snap-back {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(0) rotate(0deg) !important;
+  }
 
   /* Favorites view */
   #fav-view { display: none; flex: 1; flex-direction: column; }
@@ -384,29 +400,35 @@ const WORDS = [
   { term: "Prolix", pronunciation: "/proʊˈlɪks/", domain: "Literary / Rhetoric", definition: "Using or containing too many words; tediously lengthy.", example: "The report would benefit from editing — several sections are unnecessarily <em>prolix</em>." },
 ];
 
-let currentIndex = 0;
 let favorites = JSON.parse(localStorage.getItem('lexicon_favs') || '[]');
-let seenIndices = JSON.parse(localStorage.getItem('lexicon_seen') || '[]');
 let currentView = 'words';
 
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+// --- Daily word logic ---
+function getDaysSinceEpoch() {
+  return Math.floor(Date.now() / (1000 * 60 * 60 * 24));
 }
 
-// Build a shuffled order
-let order = JSON.parse(localStorage.getItem('lexicon_order') || 'null');
-if (!order || order.length !== WORDS.length) {
-  order = shuffle([...Array(WORDS.length).keys()]);
-  localStorage.setItem('lexicon_order', JSON.stringify(order));
+function getDailyWordIndex() {
+  const day = getDaysSinceEpoch();
+  const cycleLength = WORDS.length;
+  const cycleNumber = Math.floor(day / cycleLength);
+  const dayInCycle = day % cycleLength;
+  let indices = [...Array(cycleLength).keys()];
+  let seed = cycleNumber * 9973 + 7919;
+  for (let i = indices.length - 1; i > 0; i--) {
+    seed = (seed * 16807 + 0) % 2147483647;
+    const j = seed % (i + 1);
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return indices[dayInCycle];
 }
-let orderPos = parseInt(localStorage.getItem('lexicon_pos') || '0');
+
+let todayIndex = getDailyWordIndex();
+let history = [todayIndex];
+let historyPos = 0;
 
 function getCurrentWord() {
-  return WORDS[order[orderPos % WORDS.length]];
+  return WORDS[history[historyPos]];
 }
 
 function isFavorited(term) {
@@ -425,30 +447,38 @@ function toggleFav() {
   if (currentView === 'favs') renderFavs();
 }
 
+function getRandomUnseenIndex() {
+  const seen = new Set(history);
+  const unseen = [...Array(WORDS.length).keys()].filter(i => !seen.has(i));
+  if (unseen.length === 0) return Math.floor(Math.random() * WORDS.length);
+  return unseen[Math.floor(Math.random() * unseen.length)];
+}
+
 function nextWord() {
-  orderPos++;
-  if (orderPos >= WORDS.length) {
-    order = shuffle([...Array(WORDS.length).keys()]);
-    localStorage.setItem('lexicon_order', JSON.stringify(order));
-    orderPos = 0;
+  if (historyPos < history.length - 1) {
+    historyPos++;
+  } else {
+    history.push(getRandomUnseenIndex());
+    historyPos = history.length - 1;
   }
-  localStorage.setItem('lexicon_pos', orderPos.toString());
-  renderCard('from-below');
+  renderCard('enter-right');
 }
 
 function prevWord() {
-  if (orderPos > 0) {
-    orderPos--;
-    localStorage.setItem('lexicon_pos', orderPos.toString());
-    renderCard('from-above');
+  if (historyPos > 0) {
+    historyPos--;
+    renderCard('enter-left');
   }
 }
 
-function renderCard(direction = 'from-below') {
+function renderCard(direction = 'enter-right') {
   const word = getCurrentWord();
   const saved = isFavorited(word.term);
+  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const label = historyPos === 0 ? dateStr : 'Swipe for more';
+
   document.getElementById('card-view').innerHTML = `
-    <div class="word-card ${direction}">
+    <div class="word-card ${direction}" id="swipe-card">
       <button class="fav-btn ${saved ? 'saved' : ''}" onclick="toggleFav()" aria-label="Save word">
         <svg class="outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         <svg class="filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
@@ -459,34 +489,57 @@ function renderCard(direction = 'from-below') {
       <div class="word-definition">${word.definition}</div>
       <div class="word-example">${word.example}</div>
     </div>
-    <div class="counter">${orderPos + 1} of ${WORDS.length} words</div>
+    <div class="counter">${label}</div>
     <div class="swipe-hint"><span>←  →</span>Swipe to navigate</div>
   `;
+  setupDrag();
 }
 
-// Swipe / scroll gesture handling
-let touchStartX = 0;
-let touchEndX = 0;
-let isSwiping = false;
+// --- Interactive drag-to-swipe ---
+function setupDrag() {
+  const card = document.getElementById('swipe-card');
+  if (!card) return;
+  let startX = 0, currentX = 0, isDragging = false;
 
-document.addEventListener('touchstart', function(e) {
-  if (currentView !== 'words') return;
-  touchStartX = e.changedTouches[0].screenX;
-  isSwiping = true;
-}, { passive: true });
+  card.addEventListener('touchstart', function(e) {
+    if (e.target.closest('.fav-btn')) return;
+    startX = e.touches[0].clientX;
+    currentX = 0;
+    isDragging = true;
+    card.classList.add('dragging');
+    card.classList.remove('enter-right', 'enter-left', 'snap-back');
+  }, { passive: true });
 
-document.addEventListener('touchend', function(e) {
-  if (currentView !== 'words' || !isSwiping) return;
-  isSwiping = false;
-  touchEndX = e.changedTouches[0].screenX;
-  const diff = touchStartX - touchEndX;
-  const threshold = 50;
-  if (diff > threshold) {
-    nextWord(); // swipe left = next
-  } else if (diff < -threshold) {
-    prevWord(); // swipe right = previous
-  }
-}, { passive: true });
+  card.addEventListener('touchmove', function(e) {
+    if (!isDragging) return;
+    currentX = e.touches[0].clientX - startX;
+    const rotation = currentX * 0.04;
+    const opacity = Math.max(0.3, 1 - Math.abs(currentX) / 400);
+    card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+    card.style.opacity = opacity;
+  }, { passive: true });
+
+  card.addEventListener('touchend', function(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    card.classList.remove('dragging');
+    const threshold = 80;
+    if (currentX < -threshold) {
+      card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+      card.style.transform = 'translateX(-120%) rotate(-8deg)';
+      card.style.opacity = '0';
+      setTimeout(() => nextWord(), 200);
+    } else if (currentX > threshold && historyPos > 0) {
+      card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+      card.style.transform = 'translateX(120%) rotate(8deg)';
+      card.style.opacity = '0';
+      setTimeout(() => prevWord(), 200);
+    } else {
+      card.classList.add('snap-back');
+      card.style.opacity = '1';
+    }
+  }, { passive: true });
+}
 
 // Mouse wheel for desktop
 document.addEventListener('wheel', function(e) {
